@@ -32,6 +32,8 @@ import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -40,6 +42,8 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/subscribe', subscriptionRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -77,6 +81,13 @@ app.listen(PORT, () => {
 });
 
 export default app;
+
+
+
+
+
+
+
 
 
 

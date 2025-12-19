@@ -23,7 +23,7 @@ export default function Navbar({ cartItemsCount, onNavigate, currentPage }: Navb
   };
 
   const { isAdmin } = useAuth();
-  
+
   const navItems = [
     { label: 'Home', page: '/', path: '/' },
     { label: 'Shop', page: 'shop', path: '/shop' },

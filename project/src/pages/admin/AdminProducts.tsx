@@ -1,6 +1,10 @@
+// ...existing code...
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Upload, Link, Loader2 } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import adminService, { AdminProduct } from '../../services/adminService';
+import aiService from '../../services/aiService';
 import productService from '../../services/productService';
 import Button from '../../components/Button';
 
@@ -9,6 +13,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -20,6 +25,11 @@ export default function AdminProducts() {
     isFeatured: false,
     material: '',
     colors: [''],
+    // AI-related fields
+    keyFeatures: '',
+    targetAudience: '',
+    metaTitle: '',
+    metaKeywords: '',
   });
 
   useEffect(() => {
@@ -52,6 +62,10 @@ export default function AdminProducts() {
       isFeatured: product.isFeatured || false,
       material: product.material || '',
       colors: product.colors && product.colors.length > 0 ? product.colors : [''],
+      keyFeatures: '',
+      targetAudience: '',
+      metaTitle: product.metaTitle || '',
+      metaKeywords: product.metaKeywords || '',
     });
     setShowForm(true);
   };
@@ -86,6 +100,8 @@ export default function AdminProducts() {
         isFeatured: formData.isFeatured,
         material: formData.material || undefined,
         colors: formData.colors.filter(c => c.trim() !== ''),
+        metaTitle: formData.metaTitle?.slice(0, 60) || undefined,
+        metaKeywords: formData.metaKeywords || undefined,
       };
 
       if (editingProduct) {
@@ -118,6 +134,10 @@ export default function AdminProducts() {
       isFeatured: false,
       material: '',
       colors: [''],
+      keyFeatures: '',
+      targetAudience: '',
+      metaTitle: '',
+      metaKeywords: '',
     });
   };
 
@@ -138,6 +158,32 @@ export default function AdminProducts() {
     setFormData({ ...formData, images: newImages });
   };
 
+  const triggerFileSelect = (index: number) => {
+    const el = document.getElementById(`image-file-${index}`) as HTMLInputElement | null;
+    el?.click();
+  };
+
+  const handleFileChange = async (index: number, file?: File) => {
+    if (!file) return;
+    try {
+      // optimistic preview using local object URL
+      const preview = URL.createObjectURL(file);
+      updateImageUrl(index, preview);
+
+      // upload to server
+      const uploadService = (await import('../../services/uploadService')).default;
+      const res = await uploadService.uploadImage(file);
+      if (res?.url) {
+        updateImageUrl(index, res.url);
+      }
+      // revoke local URL after upload to avoid memory leak
+      URL.revokeObjectURL(preview);
+    } catch (err) {
+      console.error('Image upload failed', err);
+      alert('Failed to upload image');
+    }
+  };
+
   const addColorField = () => {
     setFormData({ ...formData, colors: [...formData.colors, ''] });
   };
@@ -153,6 +199,45 @@ export default function AdminProducts() {
     const newColors = [...formData.colors];
     newColors[index] = color;
     setFormData({ ...formData, colors: newColors });
+  };
+
+  // AI generation handler (cleaned up)
+  const handleGenerateAI = async () => {
+    if (!formData.name.trim()) {
+      alert('Please enter a product name first');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const payload = {
+        productName: formData.name,
+        category: formData.category,
+        price: formData.price,
+        features: formData.keyFeatures,
+        audience: formData.targetAudience,
+      };
+
+      const response = await aiService.generateProductContent(payload);
+      const data = response?.data ?? response;
+
+      if (!data || typeof data !== 'object' || typeof data.description !== 'string') {
+        console.error('Invalid AI response shape:', data);
+        alert('AI returned an unexpected result');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        description: data.description,
+        metaTitle: (data.metaTitle ?? prev.metaTitle ?? '').toString().slice(0, 60),
+        metaKeywords: data.metaKeywords ?? prev.metaKeywords ?? '',
+      }));
+    } catch (err) {
+      console.error('AI generation failed:', err);
+      alert('Failed to generate AI content');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   if (loading) {
@@ -191,11 +276,82 @@ export default function AdminProducts() {
 
               <div className="form-group">
                 <label>Description *</label>
-                <textarea
+                <ReactQuill
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  required
+                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  theme="snow"
+                  modules={{
+                    toolbar: [
+                      [{ 'header': [1, 2, false] }],
+                      ['bold', 'italic', 'underline'],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      ['clean']
+                    ],
+                  }}
+                  placeholder="Enter product description..."
+                />
+
+                <div className="ai-generator-section" style={{ marginTop: '16px' }}>
+                  <div className="ai-inputs-grid">
+                    <div className="ai-input-group">
+                      <label>Key Features (one per line)</label>
+                      <textarea
+                        value={formData.keyFeatures}
+                        onChange={(e) => setFormData({ ...formData, keyFeatures: e.target.value })}
+                        rows={3}
+                        placeholder="e.g. Breathable fabric&#10;Lightweight&#10;Machine washable"
+                      />
+                    </div>
+
+                    <div className="ai-input-group">
+                      <label>Target Audience</label>
+                      <input
+                        type="text"
+                        value={formData.targetAudience}
+                        onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                        placeholder="e.g. Young professionals, active travelers"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '12px' }}>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={handleGenerateAI}
+                      disabled={aiLoading}
+                    >
+                      {aiLoading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <span>🤖</span>
+                          Generate AI Description
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Meta Title (max 60 chars)</label>
+                <input
+                  type="text"
+                  value={formData.metaTitle}
+                  onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value.slice(0, 60) })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Meta Keywords (comma-separated)</label>
+                <input
+                  type="text"
+                  value={formData.metaKeywords}
+                  onChange={(e) => setFormData({ ...formData, metaKeywords: e.target.value })}
                 />
               </div>
 
@@ -273,13 +429,31 @@ export default function AdminProducts() {
                 <label>Images *</label>
                 {formData.images.map((img, index) => (
                   <div key={index} className="image-input-group">
-                    <input
-                      type="url"
-                      value={img.url}
-                      onChange={(e) => updateImageUrl(index, e.target.value)}
-                      placeholder="Image URL"
-                      required
-                    />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
+                      <input
+                        type="url"
+                        value={img.url}
+                        onChange={(e) => updateImageUrl(index, e.target.value)}
+                        placeholder="Image URL or paste URL here"
+                        style={{ flex: 1 }}
+                        required
+                      />
+                      <input
+                        id={`image-file-${index}`}
+                        style={{ display: 'none' }}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(index, e.target.files?.[0])}
+                      />
+                      <button type="button" onClick={() => triggerFileSelect(index)} className="button button-outline" style={{ padding: '8px 10px' }}>
+                        <Upload size={16} />
+                      </button>
+                    </div>
+                    {img.url && (
+                      <div style={{ marginTop: 8 }}>
+                        <img src={img.url} alt={`preview-${index}`} style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                      </div>
+                    )}
                     {formData.images.length > 1 && (
                       <button type="button" onClick={() => removeImageField(index)} className="remove-btn">
                         Remove
@@ -365,4 +539,3 @@ export default function AdminProducts() {
     </div>
   );
 }
-

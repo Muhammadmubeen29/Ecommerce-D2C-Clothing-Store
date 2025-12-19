@@ -2,6 +2,7 @@ import api from '../config/api';
 
 export interface Product {
   _id: string;
+  slug?: string;
   name: string;
   description: string;
   price: number;
@@ -42,6 +43,11 @@ class ProductService {
     return response.data.data;
   }
 
+  async getProductBySlug(slug: string): Promise<Product> {
+    const response = await api.get(`/products/slug/${slug}`);
+    return response.data.data;
+  }
+
   async getProductById(id: string): Promise<Product> {
     const response = await api.get(`/products/${id}`);
     return response.data.data;
@@ -63,6 +69,10 @@ class ProductService {
 }
 
 export default new ProductService();
+
+
+
+
 
 
 

@@ -14,6 +14,8 @@ export interface AdminProduct {
   colors?: string[];
   rating?: number;
   numReviews?: number;
+  metaTitle?: string;
+  metaKeywords?: string;
 }
 
 export interface AdminOrder {
@@ -80,4 +82,10 @@ class AdminService {
 }
 
 export default new AdminService();
+
+
+
+
+
+
 

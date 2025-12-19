@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import Button from './Button';
 import ProductCard from './ProductCard';
@@ -12,6 +13,36 @@ interface HeroSectionProps {
 
 export default function HeroSection({ featuredProducts, onNavigate, onViewProduct }: HeroSectionProps) {
   const displayProducts = featuredProducts.slice(0, 3);
+
+  // Typing animation for the hero title
+  const fullTitle = 'Elegance Crafted in Pakistan';
+  const highlight = 'Pakistan';
+  const highlightIndex = useMemo(() => fullTitle.indexOf(highlight), []);
+  const [typedCount, setTypedCount] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    if (typedCount < fullTitle.length) {
+      const t = setTimeout(() => setTypedCount((c) => c + 1), 50);
+      return () => clearTimeout(t);
+    }
+  }, [typedCount]);
+
+  useEffect(() => {
+    const blink = setInterval(() => setShowCursor((v) => !v), 500);
+    return () => clearInterval(blink);
+  }, []);
+
+  const currentText = fullTitle.slice(0, typedCount);
+  const beforeHighlight = highlightIndex >= 0 ? currentText.slice(0, Math.min(highlightIndex, currentText.length)) : currentText;
+  const highlightPart =
+    highlightIndex >= 0 && typedCount > highlightIndex
+      ? currentText.slice(highlightIndex, Math.min(highlightIndex + highlight.length, currentText.length))
+      : '';
+  const afterHighlight =
+    highlightIndex >= 0 && typedCount > highlightIndex + highlight.length
+      ? currentText.slice(highlightIndex + highlight.length)
+      : '';
 
   return (
     <section className="modern-hero">
@@ -46,8 +77,11 @@ export default function HeroSection({ featuredProducts, onNavigate, onViewProduc
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="hero-title"
               >
-                Elegance Crafted in{' '}
-                <span className="gradient-text">Pakistan</span>
+                {/* Typing animation with gradient highlight on Pakistan */}
+                <span>{beforeHighlight}</span>
+                {highlightPart && <span className="gradient-text">{highlightPart}</span>}
+                <span>{afterHighlight}</span>
+                <span style={{ opacity: showCursor ? 1 : 0 }}>&#124;</span>
               </motion.h1>
 
               <motion.p
@@ -124,7 +158,7 @@ export default function HeroSection({ featuredProducts, onNavigate, onViewProduc
                     >
                       <ProductCard
                         {...product}
-                        onClick={() => onViewProduct(product.id)}
+                        onClick={() => onViewProduct(product.slug || product.id)}
                       />
                     </motion.div>
                   ))}
@@ -143,4 +177,7 @@ export default function HeroSection({ featuredProducts, onNavigate, onViewProduc
     </section>
   );
 }
+
+
+
 

@@ -86,3 +86,10 @@ const slides = [
 - **Optimized re-renders** with React Router
 - **Lazy loading** ready for future implementation
 
+
+
+
+
+
+
+

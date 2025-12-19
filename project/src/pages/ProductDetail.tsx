@@ -90,14 +90,14 @@ export default function ProductDetail({ product, onAddToCart, onNavigate }: Prod
                 </Button>
               </div>
             ) : (
-              <Button
-                onClick={() => {
-                  onAddToCart(product.id, selectedSize);
-                }}
-                fullWidth
-              >
-                <ShoppingCart size={18} /> Add to Cart
-              </Button>
+            <Button
+              onClick={() => {
+                onAddToCart(product.id, selectedSize);
+              }}
+              fullWidth
+            >
+              <ShoppingCart size={18} /> Add to Cart
+            </Button>
             )}
             <button className="wishlist-button">
               <Heart size={20} />

@@ -14,6 +14,13 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import { Product, CartItem } from './types';
 import productService from './services/productService';
+
+const slugify = (s: string) => s
+  .toLowerCase()
+  .trim()
+  .replace(/[^a-z0-9\s-]/g, '')
+  .replace(/\s+/g, '-')
+  .replace(/-+/g, '-');
 import { useAuth } from './context/AuthContext';
 
 
@@ -36,6 +43,7 @@ function AppContent() {
         // Convert backend products to frontend format
         const formattedProducts = data.map(product => ({
           id: product._id,
+          slug: product.slug || slugify(product.name),
           name: product.name,
           price: product.price,
           image: product.images[0]?.url || '',
@@ -48,6 +56,7 @@ function AppContent() {
           const featuredData = await productService.getFeaturedProducts();
           const formattedFeatured = featuredData.map(product => ({
             id: product._id,
+            slug: product.slug || slugify(product.name),
             name: product.name,
             price: product.price,
             image: product.images[0]?.url || '',
@@ -75,8 +84,8 @@ function AppContent() {
     window.scrollTo(0, 0);
   };
 
-  const handleViewProduct = (id: string) => {
-    navigate(`/product/${id}`);
+  const handleViewProduct = (slugOrId: string) => {
+    navigate(`/product/${slugOrId}`);
   };
 
   const handleAddToCart = (productId: string, size: string) => {
@@ -150,7 +159,7 @@ function AppContent() {
           <Route path="/login" element={
             <Login onNavigate={handleNavigate} />
           } />
-          <Route path="/product/:id" element={
+          <Route path="/product/:slug" element={
             <ProductDetailPage
               onAddToCart={handleAddToCart}
               onNavigate={handleNavigate}

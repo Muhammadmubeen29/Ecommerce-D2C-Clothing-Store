@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getProducts,
   getProductById,
+  getProductBySlug,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -14,6 +15,7 @@ const router = express.Router();
 // Public routes
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
+router.get('/slug/:slug', getProductBySlug);
 router.get('/:id', getProductById);
 
 // Admin routes
@@ -22,6 +24,10 @@ router.put('/:id', protect, admin, updateProduct);
 router.delete('/:id', protect, admin, deleteProduct);
 
 export default router;
+
+
+
+
 
 
 

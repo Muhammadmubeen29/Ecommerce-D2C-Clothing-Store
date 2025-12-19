@@ -62,6 +62,27 @@ export const getProductById = async (req, res) => {
   }
 };
 
+// @desc    Get single product by slug
+// @route   GET /api/products/slug/:slug
+// @access  Public
+export const getProductBySlug = async (req, res) => {
+  try {
+    const product = await Product.findOne({ slug: req.params.slug });
+
+    if (product) {
+      res.json({
+        success: true,
+        data: product,
+      });
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    console.error('Get Product By Slug Error:', error);
+    res.status(500).json({ message: 'Server error fetching product' });
+  }
+};
+
 // @desc    Create a new product (Admin only)
 // @route   POST /api/products
 // @access  Private/Admin
@@ -78,6 +99,8 @@ export const createProduct = async (req, res) => {
       isFeatured,
       material,
       colors,
+      metaTitle,
+      metaKeywords,
     } = req.body;
 
     // Validation
@@ -96,6 +119,8 @@ export const createProduct = async (req, res) => {
       isFeatured: isFeatured || false,
       material: material || '',
       colors: colors || [],
+      metaTitle: metaTitle || '',
+      metaKeywords: metaKeywords || '',
     });
 
     res.status(201).json({
@@ -178,6 +203,10 @@ export const getFeaturedProducts = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching featured products' });
   }
 };
+
+
+
+
 
 
 

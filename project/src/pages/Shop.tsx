@@ -101,7 +101,7 @@ export default function Shop({ products, onViewProduct }: ShopProps) {
               <ProductCard
                 key={product.id}
                 {...product}
-                onClick={() => onViewProduct(product.id)}
+                onClick={() => onViewProduct(product.slug || product.id)}
               />
             ))}
           </div>

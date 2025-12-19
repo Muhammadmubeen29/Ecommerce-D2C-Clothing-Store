@@ -11,15 +11,15 @@ interface ProductDetailPageProps {
 }
 
 export default function ProductDetailPage({ onAddToCart, onNavigate }: ProductDetailPageProps) {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!id) {
-        setError('Product ID is required');
+      if (!slug) {
+        setError('Product slug is required');
         setLoading(false);
         return;
       }
@@ -27,7 +27,28 @@ export default function ProductDetailPage({ onAddToCart, onNavigate }: ProductDe
       try {
         setLoading(true);
         setError(null);
-        const data = await productService.getProductById(id);
+        let data: any;
+        // 1) Try by slug endpoint
+        try {
+          data = await productService.getProductBySlug(slug);
+        } catch {
+          // 2) Fallback: if slug is actually an ID
+          try {
+            data = await productService.getProductById(slug);
+          } catch {
+            // 3) Final fallback: fetch all and match slug against name
+            const all = await productService.getAllProducts();
+            const slugify = (s: string) => s
+              .toLowerCase()
+              .trim()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-');
+            const matched = all.find(p => (p as any).slug === slug || slugify(p.name) === slug);
+            if (!matched) throw new Error('Not found');
+            data = await productService.getProductById((matched as any)._id);
+          }
+        }
         // Convert backend product to frontend format
         const formattedProduct: Product = {
           id: data._id,
@@ -56,7 +77,7 @@ export default function ProductDetailPage({ onAddToCart, onNavigate }: ProductDe
     };
 
     fetchProduct();
-  }, [id]);
+  }, [slug]);
 
   if (loading) {
     return (

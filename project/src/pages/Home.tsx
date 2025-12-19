@@ -21,7 +21,7 @@ export default function Home({ onNavigate, onViewProduct, featuredProducts }: Ho
         keywords="Pakistani fashion, kurta, shalwar kameez, traditional clothing, ethnic wear, online shopping, D2C export, handcrafted fashion, premium quality"
         image="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=630&fit=crop"
       />
-      <div className="home-page">
+    <div className="home-page">
       {/* Modern Hero Section */}
       <HeroSection
         featuredProducts={featuredProducts}
@@ -74,7 +74,7 @@ export default function Home({ onNavigate, onViewProduct, featuredProducts }: Ho
               >
             <ProductCard
               {...product}
-              onClick={() => onViewProduct(product.id)}
+              onClick={() => onViewProduct(product.slug || product.id)}
             />
               </div>
           ))}
